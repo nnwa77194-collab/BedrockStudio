@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bedrock Studio — Texture Pack Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & ROOT ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg0: #080b0f;
+  --bg1: #0d1117;
+  --bg2: #141a22;
+  --bg3: #1c2530;
+  --border: #2a3545;
+  --border2: #3d4f63;
+  --accent: #00e5ff;
+  --accent2: #7c4dff;
+  --accent3: #ff6b35;
+  --green: #00e676;
+  --red: #ff1744;
+  --yellow: #ffd740;
+  --text: #e8edf3;
+  --text2: #8a9bb0;
+  --text3: #4a5f75;
+  --glass: rgba(13,17,23,0.85);
+  --r: 8px;
+  --r2: 12px;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-main: 'Exo 2', sans-serif;
+  --bottom-nav: 64px;
+}
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg0); color: var(--text); font-family: var(--font-main); }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg1); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ===== APP SHELL ===== */
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; position: relative; }
+
+/* ===== HEADER ===== */
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; height: 52px; min-height: 52px;
+  background: linear-gradient(180deg, var(--bg1) 0%, rgba(13,17,23,0.95) 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 100;
+}
+#header .logo { display: flex; align-items: center; gap: 8px; }
+#header .logo-icon { width: 30px; height: 30px; position: relative; }
+#header .logo-icon svg { width: 100%; height: 100%; }
+#header .logo-text { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; font-family: var(--font-main); }
+#header .logo-sub { font-size: 9px; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; font-family: var(--font-mono); display: block; margin-top: -4px; }
+#header .header-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: var(--r);
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; font-size: 16px; flex-shrink: 0;
+}
+.icon-btn:active { transform: scale(0.92); background: var(--bg3); color: var(--accent); border-color: var(--accent); }
+.icon-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(0,229,255,0.1); }
+
+/* ===== MAIN CONTENT ===== */
+#main { flex: 1; overflow: hidden; position: relative; }
+
+/* ===== PANELS ===== */
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.panel.active { opacity: 1; pointer-events: all; }
+
+/* ===== BOTTOM NAV ===== */
+#bottom-nav {
+  height: var(--bottom-nav); min-height: var(--bottom-nav);
+  background: var(--bg1); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; height: 100%; cursor: pointer; transition: all 0.15s;
+  color: var(--text3); border: none; background: none; font-family: var(--font-main);
+}
+.nav-btn svg { width: 22px; height: 22px; transition: all 0.2s; }
+.nav-btn span { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; transition: color 0.2s; }
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active svg { filter: drop-shadow(0 0 6px var(--accent)); }
+
+/* ===== TEXTURES PANEL ===== */
+#textures-panel { background: var(--bg0); }
+.panel-header {
+  padding: 8px 16px; background: var(--bg1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.panel-title { font-size: 13px; font-weight: 700; color: var(--text2); letter-spacing: 2px; text-transform: uppercase; font-family: var(--font-mono); }
+
+/* Upload zone */
+#upload-zone {
+  margin: 12px; border: 2px dashed var(--border2); border-radius: var(--r2);
+  padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.2s;
+  background: linear-gradient(135deg, rgba(0,229,255,0.03), rgba(124,77,255,0.03));
+  flex-shrink: 0;
+}
+#upload-zone:active, #upload-zone.drag-over { border-color: var(--accent); background: rgba(0,229,255,0.08); }
+#upload-zone .upload-icon { font-size: 32px; margin-bottom: 8px; }
+#upload-zone p { color: var(--text2); font-size: 13px; line-height: 1.5; }
+#upload-zone strong { color: var(--accent); }
+#file-input { display: none; }
+
+/* Category tabs */
+.cat-tabs { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--border); color: var(--text3); background: var(--bg2);
+  transition: all 0.15s; font-family: var(--font-mono);
+}
+.cat-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(0,229,255,0.1); }
+
+/* Texture grid */
+#texture-grid { flex: 1; overflow-y: auto; padding: 8px 12px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-content: start; }
+.tex-item {
+  aspect-ratio: 1; border-radius: var(--r); overflow: hidden; cursor: pointer;
+  border: 2px solid var(--border); position: relative; background: var(--bg2);
+  transition: all 0.15s;
+}
+.tex-item canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+.tex-item .tex-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); padding: 3px 4px; font-size: 9px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); }
+.tex-item.selected { border-color: var(--accent); }
+.tex-item .tex-badge { position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); display: none; }
+.tex-item.selected .tex-badge { display: block; }
+.tex-item:active { transform: scale(0.95); }
+.tex-item .del-btn { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 4px; background: rgba(255,23,68,0.85); color: white; border: none; font-size: 12px; display: none; align-items: center; justify-content: center; cursor: pointer; }
+.tex-item:hover .del-btn, .tex-item.long-press .del-btn { display: flex; }
+
+/* Empty state */
+.empty-state { grid-column: 1/-1; text-align: center; padding: 32px 16px; color: var(--text3); }
+.empty-state .big-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.3; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* ===== EDITOR PANEL ===== */
+#editor-panel { background: var(--bg0); }
+.editor-top { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Canvas area */
+#canvas-container {
+  flex: 1; position: relative; overflow: hidden; background: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  touch-action: none;
+}
+#canvas-checkerboard {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(45deg,#1a2230 25%,transparent 25%),
+    linear-gradient(-45deg,#1a2230 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#1a2230 75%),
+    linear-gradient(-45deg,transparent 75%,#1a2230 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+#canvas-wrap { position: relative; transform-origin: center; }
+#canvas-wrap canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+#canvas-wrap #layer-display { position: relative; pointer-events: none; }
+#canvas-wrap #draw-canvas { cursor: crosshair; position: absolute; top: 0; left: 0; z-index: 10; }
+#canvas-wrap #selection-canvas { position: absolute; top: 0; left: 0; z-index: 20; pointer-events: none; }
+
+/* Canvas overlay UI */
+#canvas-info { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--text2); font-family: var(--font-mono); pointer-events: none; }
+#canvas-zoom-ctrl { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 100; pointer-events: all; }
+#canvas-zoom-ctrl button { width: 36px; height: 36px; border-radius: 6px; background: rgba(8,11,15,0.85); border: 1px solid var(--border2); color: var(--text); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#undo-redo { position: absolute; bottom: 8px; left: 8px; display: flex; gap: 4px; z-index: 100; pointer-events: all; }
+#undo-redo button { padding: 6px 12px; border-radius: 6px; background: rgba(8,11,15,0.85); border: 1px solid var(--border2); color: var(--text2); font-size: 12px; cursor: pointer; font-family: var(--font-mono); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#undo-redo button:active { color: var(--accent); border-color: var(--accent); }
+#undo-redo button:disabled { opacity: 0.3; }
+
+/* Tool drawer */
+#tool-drawer { background: var(--bg1); border-top: 1px solid var(--border); flex-shrink: 0; }
+.drawer-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.drawer-tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; color: var(--text3); border: none; background: none; font-family: var(--font-mono); transition: color 0.15s; border-bottom: 2px solid transparent; }
+.drawer-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.drawer-content { display: none; padding: 10px 12px; max-height: 200px; overflow-y: auto; }
+.drawer-content.active { display: block; }
+
+/* Tools grid */
+.tools-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.tool-btn {
+  aspect-ratio: 1; border-radius: var(--r); background: var(--bg2); border: 2px solid var(--border);
+  color: var(--text2); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; transition: all 0.15s; font-size: 20px;
+}
+.tool-btn span { font-size: 9px; color: var(--text3); font-family: var(--font-mono); }
+.tool-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.1); }
+.tool-btn:active { transform: scale(0.92); }
+
+/* Sliders */
+.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.slider-label { font-size: 11px; color: var(--text2); font-family: var(--font-mono); min-width: 70px; }
+.slider-val { font-size: 11px; color: var(--accent); font-family: var(--font-mono); min-width: 30px; text-align: right; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 6px; background: var(--bg3); border-radius: 999px; outline: none;
+  touch-action: pan-x; will-change: transform;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--bg1);
+  box-shadow: 0 0 10px rgba(0,229,255,0.45);
+}
+input[type=range]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--bg1);
+  box-shadow: 0 0 10px rgba(0,229,255,0.45);
+}
+
+/* Color swatch */
+.color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+#color-swatch { width: 44px; height: 44px; border-radius: var(--r); border: 2px solid var(--border2); cursor: pointer; background: #000000; }
+#color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+#color-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
+.color-presets { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.color-preset { width: 26px; height: 26px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s; }
+.color-preset:active { transform: scale(1.15); }
+
+/* Layers */
+#layers-list { display: flex; flex-direction: column; gap: 6px; }
+.layer-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  background: var(--bg2); border-radius: var(--r); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+}
+.layer-item.active { border-color: var(--accent); background: rgba(0,229,255,0.06); }
+.layer-thumb { width: 36px; height: 36px; border-radius: 4px; background: var(--bg3); overflow: hidden; flex-shrink: 0; }
+.layer-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+.layer-info { flex: 1; min-width: 0; }
+.layer-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.layer-meta { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+.layer-actions { display: flex; gap: 4px; }
+.layer-act-btn { width: 24px; height: 24px; border-radius: 4px; background: var(--bg3); border: none; color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.layer-act-btn:active { color: var(--accent); }
+.add-layer-btn { width: 100%; padding: 10px; border-radius: var(--r); background: var(--bg2); border: 1px dashed var(--border2); color: var(--text3); cursor: pointer; font-size: 13px; transition: all 0.15s; font-family: var(--font-main); }
+.add-layer-btn:active { color: var(--accent); border-color: var(--accent); }
+
+/* Filters */
+.filters-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.filter-btn {
+  padding: 10px 8px; border-radius: var(--r); border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text2); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+  text-align: center; transition: all 0.15s; font-family: var(--font-mono);
+}
+.filter-btn .filter-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+.filter-btn[data-filter="vintage"]:active, .filter-btn[data-filter="vintage"].applied { border-color: var(--yellow); color: var(--yellow); background: rgba(255,215,64,0.1); }
+.filter-btn[data-filter="neon"]:active, .filter-btn[data-filter="neon"].applied { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.1); }
+.filter-btn[data-filter="pixelate"]:active, .filter-btn[data-filter="pixelate"].applied { border-color: var(--accent2); color: var(--accent2); background: rgba(124,77,255,0.1); }
+.filter-btn[data-filter="sharpen"]:active { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.1); }
+.filter-btn[data-filter="blur"]:active { border-color: var(--text2); color: var(--text); }
+.filter-btn[data-filter="invert"]:active { border-color: var(--red); color: var(--red); background: rgba(255,23,68,0.1); }
+.filter-btn:active { transform: scale(0.96); }
+
+/* ===== PREVIEW PANEL ===== */
+#preview-panel { background: var(--bg0); }
+#preview-3d-wrap { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, #0d1a2a 0%, #050810 100%); overflow: hidden; }
+#preview-3d-wrap::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(0,229,255,0.05), transparent 50%), radial-gradient(circle at 70% 80%, rgba(124,77,255,0.05), transparent 50%); pointer-events: none; }
+#three-canvas { display: block; }
+#preview-info { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--text3); font-family: var(--font-mono); pointer-events: none; }
+.preview-controls { padding: 12px; background: var(--bg1); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; }
+.prev-ctrl-btn { padding: 10px 8px; border-radius: var(--r); background: var(--bg2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; text-align: center; font-family: var(--font-mono); transition: all 0.15s; }
+.prev-ctrl-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.1); }
+.prev-ctrl-btn:active { transform: scale(0.96); }
+
+/* Face selector */
+.face-selector { padding: 10px 12px; background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0; }
+.face-selector-title { font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 8px; }
+.face-btns { display: flex; gap: 6px; overflow-x: auto; }
+.face-btn { flex-shrink: 0; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); color: var(--text3); background: var(--bg3); transition: all 0.15s; font-family: var(--font-mono); }
+.face-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(124,77,255,0.1); }
+
+/* ===== EXPORT PANEL ===== */
+#export-panel { background: var(--bg0); overflow-y: auto; }
+.export-section { padding: 16px 16px 0; }
+.export-section + .export-section { padding-top: 12px; }
+.section-title { font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.input-group { margin-bottom: 10px; }
+.input-label { font-size: 11px; color: var(--text2); font-family: var(--font-mono); margin-bottom: 5px; display: block; }
+.text-input {
+  width: 100%; padding: 10px 12px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text); font-size: 13px; font-family: var(--font-main);
+  outline: none; transition: border-color 0.15s;
+}
+.text-input:focus { border-color: var(--accent); }
+.text-input textarea { resize: none; min-height: 64px; }
+textarea.text-input { resize: none; min-height: 64px; }
+
+/* UUID display */
+.uuid-row { display: flex; gap: 6px; align-items: center; }
+.uuid-display { flex: 1; padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); font-size: 10px; color: var(--text2); font-family: var(--font-mono); word-break: break-all; }
+.regen-btn { padding: 8px 10px; border-radius: var(--r); background: var(--bg2); border: 1px solid var(--border); color: var(--text3); font-size: 12px; cursor: pointer; white-space: nowrap; font-family: var(--font-mono); }
+.regen-btn:active { color: var(--accent); border-color: var(--accent); }
+
+/* Pack summary */
+.pack-summary { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 12px; margin: 0 16px; }
+.summary-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.summary-item:last-child { border-bottom: none; }
+.summary-key { font-size: 12px; color: var(--text3); font-family: var(--font-mono); }
+.summary-val { font-size: 12px; color: var(--text); font-weight: 600; }
+.summary-val.accent { color: var(--accent); }
+
+/* Export buttons */
+.export-btns { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.export-btn {
+  width: 100%; padding: 16px; border-radius: var(--r2); font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border: none;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.15s; font-family: var(--font-main);
+}
+.export-btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--bg0); }
+.export-btn-primary:active { transform: scale(0.98); box-shadow: 0 0 24px rgba(0,229,255,0.3); }
+.export-btn-secondary { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+.export-btn-secondary:active { border-color: var(--accent2); color: var(--accent2); }
+.export-btn .btn-icon { font-size: 20px; }
+
+/* Progress */
+#export-progress { display: none; margin: 0 16px 16px; background: var(--bg2); border-radius: var(--r2); padding: 14px; border: 1px solid var(--border); }
+#export-progress.visible { display: block; }
+.progress-label { font-size: 12px; color: var(--text2); font-family: var(--font-mono); margin-bottom: 8px; }
+.progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.3s; width: 0%; }
+
+/* ===== TOAST ===== */
+#toast {
+  position: fixed; bottom: calc(var(--bottom-nav) + 12px); left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--bg2); border: 1px solid var(--border2); color: var(--text);
+  padding: 10px 18px; border-radius: 24px; font-size: 13px; font-family: var(--font-mono);
+  z-index: 1000; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.success { border-color: var(--green); color: var(--green); }
+#toast.error { border-color: var(--red); color: var(--red); }
+
+/* ===== MODAL ===== */
+#modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+#modal-overlay.open { opacity: 1; pointer-events: all; }
+#modal-box {
+  background: var(--bg1); border-radius: var(--r2) var(--r2) 0 0; width: 100%;
+  max-width: 500px; padding: 20px 16px 32px; border-top: 1px solid var(--border2);
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(.25,.8,.25,1);
+}
+#modal-overlay.open #modal-box { transform: translateY(0); }
+#modal-box h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+#modal-box p { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.5; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btn { flex: 1; padding: 12px; border-radius: var(--r); font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: var(--font-main); }
+.modal-btn-confirm { background: var(--accent); color: var(--bg0); }
+.modal-btn-cancel { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+
+/* ===== BRUSH SIZE ===== */
+#brush-size-indicator {
+  position: absolute; pointer-events: none; border: 1px solid rgba(0,229,255,0.7);
+  border-radius: 50%; z-index: 50; transform: translate(-50%, -50%);
+  display: none;
+}
+
+/* ===== NO TEXTURE PLACEHOLDER ===== */
+.no-tex-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 12px; color: var(--text3); }
+.no-tex-msg .big { font-size: 48px; opacity: 0.2; }
+.no-tex-msg p { font-size: 13px; text-align: center; line-height: 1.6; max-width: 200px; }
+
+/* ===== LOADING ===== */
+.loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== MARQUEE SELECTION ===== */
+.marching-ants { stroke-dasharray: 4 4; animation: dash 0.5s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -8; } }
+
+/* ===== PIXEL GRID TOGGLE ===== */
+.pixel-grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+
+/* ===== SESSIONS SCREEN ===== */
+#sessions-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg0);
+  display: flex; flex-direction: column;
+  font-family: var(--font-main);
+  overflow: hidden;
+}
+#sessions-screen.hidden { display: none; }
+
+.ss-header {
+  padding: 40px 24px 20px;
+  flex-shrink: 0;
+}
+.ss-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.ss-logo-icon { width: 36px; height: 36px; }
+.ss-logo-icon svg { width: 100%; height: 100%; }
+.ss-logo-text { font-size: 22px; font-weight: 900; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; }
+.ss-logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 3px; text-transform: uppercase; font-family: var(--font-mono); }
+.ss-tagline { font-size: 12px; color: var(--text3); font-family: var(--font-mono); margin-top: 16px; letter-spacing: 1px; }
+
+.ss-section-label {
+  padding: 0 24px 10px;
+  font-size: 10px; color: var(--text3); letter-spacing: 3px;
+  text-transform: uppercase; font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.ss-grid {
+  flex: 1; overflow-y: auto;
+  padding: 0 16px 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-content: start;
+}
+.ss-grid::-webkit-scrollbar { display: none; }
+
+/* CREATE card */
+.ss-card-create {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  border: 2px dashed var(--border2);
+  background: linear-gradient(135deg, rgba(0,229,255,0.04), rgba(124,77,255,0.04));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; cursor: pointer; transition: all 0.2s;
+}
+.ss-card-create:active { border-color: var(--accent); background: rgba(0,229,255,0.1); transform: scale(0.96); }
+.ss-card-create .cc-icon {
+  width: 52px; height: 52px;
+  border: 2px dashed var(--border2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.ss-card-create:active .cc-icon { border-color: var(--accent); }
+.ss-card-create .cc-icon::before {
+  content: '';
+  width: 24px; height: 24px;
+  border: 2px solid var(--text3);
+  border-radius: 4px;
+  position: absolute;
+}
+.ss-card-create .cc-icon::after {
+  content: '+';
+  font-size: 20px; font-weight: 300;
+  color: var(--text3);
+  line-height: 1;
+}
+.ss-card-create:active .cc-icon::before { border-color: var(--accent); }
+.ss-card-create:active .cc-icon::after { color: var(--accent); }
+.ss-card-create span { font-size: 13px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; font-family: var(--font-mono); transition: color 0.2s; }
+.ss-card-create:active span { color: var(--accent); }
+
+/* PROJECT card */
+.ss-card {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg1);
+  display: flex; flex-direction: column;
+  overflow: hidden; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.ss-card:active { transform: scale(0.96); border-color: var(--accent); }
+.ss-card-preview {
+  flex: 1;
+  background: var(--bg2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px; padding: 10px; overflow: hidden;
+}
+.ss-card-preview-empty {
+  flex: 1; background: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; opacity: 0.2;
+}
+.ss-thumb {
+  border-radius: 3px; overflow: hidden;
+  background: var(--bg3);
+}
+.ss-thumb canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+.ss-card-footer {
+  padding: 8px 10px; border-top: 1px solid var(--border);
+  background: var(--bg1);
+}
+.ss-card-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-card-meta { font-size: 10px; color: var(--text3); font-family: var(--font-mono); margin-top: 2px; }
+.ss-card-del {
+  position: absolute; top: 6px; right: 6px;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(255,23,68,0.85); color: white;
+  border: none; font-size: 13px; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.ss-card:hover .ss-card-del,
+.ss-card.long-press .ss-card-del { display: flex; }
+
+/* New project modal */
+#new-project-modal {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+#new-project-modal.open { opacity: 1; pointer-events: all; }
+#new-project-box {
+  background: var(--bg1); border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 500px;
+  padding: 24px 20px 40px;
+  border-top: 1px solid var(--border2);
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(.25,.8,.25,1);
+}
+#new-project-modal.open #new-project-box { transform: translateY(0); }
+#new-project-box h3 { font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+#new-project-box p { font-size: 12px; color: var(--text3); font-family: var(--font-mono); margin-bottom: 20px; letter-spacing: 1px; }
+#new-project-name {
+  width: 100%; padding: 14px 16px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text); font-size: 16px;
+  font-family: var(--font-main); outline: none; margin-bottom: 14px;
+}
+#new-project-name:focus { border-color: var(--accent); }
+.npm-btns { display: flex; gap: 10px; }
+.npm-btn { flex: 1; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; font-family: var(--font-main); letter-spacing: 0.5px; }
+.npm-btn-ok { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--bg0); }
+.npm-btn-cancel { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+
+
+/* Back to projects bar */
+#back-to-projects {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; flex-shrink: 0;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+#back-to-projects:active { background: var(--bg2); }
+#back-to-projects .back-arrow {
+  font-size: 14px; color: var(--text3);
+  display: flex; align-items: center;
+}
+#back-to-projects .back-label {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 2px; text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+#back-to-projects:active .back-arrow,
+#back-to-projects:active .back-label { color: var(--accent); }
+
+</style>
+</head>
+<body>
+
+<!-- SESSIONS SCREEN -->
+<div id="sessions-screen">
+  <div class="ss-header">
+    <div class="ss-logo">
+      <div class="ss-logo-icon">
+        <svg viewBox="0 0 36 36" fill="none">
+          <rect x="2" y="10" width="16" height="16" fill="#00e5ff" opacity="0.9"/>
+          <rect x="12" y="4" width="16" height="16" fill="#7c4dff" opacity="0.8"/>
+          <rect x="7" y="15" width="16" height="16" fill="#ff6b35" opacity="0.7"/>
+        </svg>
+      </div>
+      <div>
+        <div class="ss-logo-text">Bedrock Studio</div>
+        <div class="ss-logo-sub">Texture Pack Studio</div>
+      </div>
+    </div>
+    <div class="ss-tagline">// SELECCIONA O CREA UN PROYECTO</div>
+  </div>
+  <div class="ss-section-label">Proyectos</div>
+  <div class="ss-grid" id="ss-grid">
+    <!-- Cards rendered by JS -->
+  </div>
+</div>
+
+<!-- NEW PROJECT MODAL -->
+<div id="new-project-modal">
+  <div id="new-project-box">
+    <h3>Nuevo Proyecto</h3>
+    <p>// DEFINE EL NOMBRE DEL PACK</p>
+    <input type="text" id="new-project-name" placeholder="Mi Texture Pack" maxlength="40">
+    <div class="npm-btns">
+      <button class="npm-btn npm-btn-cancel" onclick="closeNewProjectModal()">Cancelar</button>
+      <button class="npm-btn npm-btn-ok" onclick="confirmNewProject()">Crear ✓</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 30 30" fill="none">
+          <rect x="2" y="8" width="14" height="14" fill="#00e5ff" opacity="0.9"/>
+          <rect x="10" y="4" width="14" height="14" fill="#7c4dff" opacity="0.8"/>
+          <rect x="6" y="12" width="14" height="14" fill="#ff6b35" opacity="0.7"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Bedrock Studio</div>
+        <span class="logo-sub">Texture Studio</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-pixel-grid" title="Pixel Grid">⊞</button>
+      <button class="icon-btn" id="btn-save-idb" title="Guardar en IndexedDB">💾</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- TEXTURES PANEL -->
+    <div class="panel active" id="textures-panel">
+      <div class="panel-header">
+        <span class="panel-title">Biblioteca de Texturas</span>
+        <button class="icon-btn" onclick="document.getElementById('file-input').click()">＋</button>
+      </div>
+      <div id="back-to-projects" onclick="goBackToProjects()">
+        <span class="back-arrow">&#8592;</span>
+        <span class="back-label">Proyectos</span>
+      </div>
+      <div id="upload-zone">
+        <div class="upload-icon">🗂️</div>
+        <p>Toca para cargar texturas PNG<br><strong>Soporta múltiples archivos y transparencia</strong></p>
+      </div>
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif" multiple>
+      <div class="cat-tabs">
+        <div class="cat-tab active" data-cat="all">Todos</div>
+        <div class="cat-tab" data-cat="blocks">Bloques</div>
+        <div class="cat-tab" data-cat="items">Ítems</div>
+        <div class="cat-tab" data-cat="entities">Entidades</div>
+        <div class="cat-tab" data-cat="ui">UI</div>
+      </div>
+      <div id="texture-grid">
+        <div class="empty-state">
+          <div class="big-icon">🧱</div>
+          <p>Carga tus texturas PNG para comenzar a editar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITOR PANEL -->
+    <div class="panel" id="editor-panel">
+      <div class="panel-header">
+        <span class="panel-title" id="editor-title">Sin textura</span>
+        <button class="icon-btn" id="btn-edit-open">📂</button>
+      </div>
+      <div class="editor-top">
+        <div id="canvas-container">
+          <div id="canvas-checkerboard"></div>
+          <div id="canvas-wrap">
+            <canvas id="layer-display"></canvas>
+            <canvas id="draw-canvas"></canvas>
+            <canvas id="selection-canvas"></canvas>
+          </div>
+          <div id="canvas-info">16×16 — 100%</div>
+          <div id="canvas-zoom-ctrl">
+            <button onclick="zoomCanvas(1.5)">＋</button>
+            <button onclick="zoomCanvas(0.67)">－</button>
+            <button onclick="resetZoom()" style="font-size:11px;padding:4px">FIT</button>
+          </div>
+          <div id="undo-redo">
+            <button id="btn-undo" disabled>↩ Undo</button>
+            <button id="btn-redo" disabled>Redo ↪</button>
+          </div>
+          <div id="brush-size-indicator"></div>
+          <div class="no-tex-msg" id="no-tex-msg">
+            <div class="big">🎨</div>
+            <p>Selecciona una textura de la biblioteca para editar</p>
+          </div>
+        </div>
+
+        <!-- TOOL DRAWER -->
+        <div id="tool-drawer">
+          <div class="drawer-tabs">
+            <button class="drawer-tab active" data-drawer="tools">Herram.</button>
+            <button class="drawer-tab" data-drawer="adjust">Ajustes</button>
+            <button class="drawer-tab" data-drawer="filters">Filtros</button>
+            <button class="drawer-tab" data-drawer="layers">Capas</button>
+          </div>
+
+          <!-- TOOLS -->
+          <div class="drawer-content active" id="drawer-tools">
+            <div class="tools-grid">
+              <button class="tool-btn active" data-tool="pencil"><span>✏️</span><span>Lápiz</span></button>
+              <button class="tool-btn" data-tool="eraser"><span>🧹</span><span>Goma</span></button>
+              <button class="tool-btn" data-tool="eyedropper"><span>💉</span><span>Cuentag.</span></button>
+              <button class="tool-btn" data-tool="fill"><span>🪣</span><span>Relleno</span></button>
+              <button class="tool-btn" data-tool="rect-select"><span>▭</span><span>Sel.Rect</span></button>
+              <button class="tool-btn" data-tool="lasso"><span>🔘</span><span>Lazo</span></button>
+              <button class="tool-btn" data-tool="move"><span>✥</span><span>Mover</span></button>
+            </div>
+            <div style="margin-top:10px;">
+              <div class="slider-row">
+                <span class="slider-label">Tamaño:</span>
+                <input type="range" id="brush-size" min="1" max="20" value="1">
+                <span class="slider-val" id="brush-size-val">1</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Opacidad:</span>
+                <input type="range" id="brush-opacity" min="1" max="100" value="100">
+                <span class="slider-val" id="brush-opacity-val">100%</span>
+              </div>
+            </div>
+            <div class="color-row" style="margin-top:8px">
+              <input type="color" id="color-swatch" value="#00e5ff">
+              <div class="color-presets" id="color-presets"></div>
+            </div>
+          </div>
+
+          <!-- ADJUSTMENTS -->
+          <div class="drawer-content" id="drawer-adjust">
+            <div class="slider-row"><span class="slider-label">Saturación:</span><input type="range" id="adj-saturation" min="-100" max="100" value="0"><span class="slider-val" id="adj-saturation-val">0</span></div>
+            <div class="slider-row"><span class="slider-label">Tono (Hue):</span><input type="range" id="adj-hue" min="-180" max="180" value="0"><span class="slider-val" id="adj-hue-val">0</span></div>
+            <div class="slider-row"><span class="slider-label">Brillo:</span><input type="range" id="adj-brightness" min="-100" max="100" value="0"><span class="slider-val" id="adj-brightness-val">0</span></div>
+            <div class="slider-row"><span class="slider-label">Contraste:</span><input type="range" id="adj-contrast" min="-100" max="100" value="0"><span class="slider-val" id="adj-contrast-val">0</span></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button onclick="applyAdjustments()" style="flex:1;padding:10px;border-radius:8px;background:var(--accent);color:var(--bg0);border:none;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font-main)">✓ APLICAR</button>
+              <button onclick="resetAdjustments()" style="flex:1;padding:10px;border-radius:8px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);font-size:12px;cursor:pointer;font-family:var(--font-main)">↺ RESET</button>
+            </div>
+          </div>
+
+          <!-- FILTERS -->
+          <div class="drawer-content" id="drawer-filters">
+            <div class="filters-grid">
+              <button class="filter-btn" data-filter="vintage"><span class="filter-icon">🎞️</span>Vintage</button>
+              <button class="filter-btn" data-filter="neon"><span class="filter-icon">💡</span>Neón</button>
+              <button class="filter-btn" data-filter="pixelate"><span class="filter-icon">🟦</span>Pixelado</button>
+              <button class="filter-btn" data-filter="sharpen"><span class="filter-icon">🔪</span>Enfocar</button>
+              <button class="filter-btn" data-filter="blur"><span class="filter-icon">🌫️</span>Desenfoque</button>
+              <button class="filter-btn" data-filter="invert"><span class="filter-icon">🔄</span>Invertir</button>
+            </div>
+          </div>
+
+          <!-- LAYERS -->
+          <div class="drawer-content" id="drawer-layers">
+            <div id="layers-list"></div>
+            <button class="add-layer-btn" onclick="addLayer()">＋ Nueva capa</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVIEW PANEL -->
+    <div class="panel" id="preview-panel">
+      <div class="panel-header">
+        <span class="panel-title">Vista Previa 3D</span>
+        <button class="icon-btn" id="btn-refresh-3d" title="Actualizar">🔄</button>
+      </div>
+      <div id="preview-3d-wrap">
+        <canvas id="three-canvas"></canvas>
+        <div id="preview-info">Arrastra para rotar · Pellizca para hacer zoom</div>
+      </div>
+      <div class="face-selector">
+        <div class="face-selector-title">Cara del cubo</div>
+        <div class="face-btns">
+          <button class="face-btn active" data-face="all">Todas</button>
+          <button class="face-btn" data-face="top">Arriba</button>
+          <button class="face-btn" data-face="bottom">Abajo</button>
+          <button class="face-btn" data-face="front">Frente</button>
+          <button class="face-btn" data-face="back">Atrás</button>
+          <button class="face-btn" data-face="left">Izq</button>
+          <button class="face-btn" data-face="right">Der</button>
+        </div>
+      </div>
+      <div class="preview-controls">
+        <button class="prev-ctrl-btn active" data-shape="cube" onclick="setPreviewShape('cube')">🧱 Cubo</button>
+        <button class="prev-ctrl-btn" data-shape="flat" onclick="setPreviewShape('flat')">▭ Plano</button>
+        <button class="prev-ctrl-btn" data-shape="slab" onclick="setPreviewShape('slab')">📋 Losa</button>
+      </div>
+    </div>
+
+    <!-- EXPORT PANEL -->
+    <div class="panel" id="export-panel">
+      <div class="export-section">
+        <div class="section-title">Información del Paquete</div>
+        <div class="input-group">
+          <label class="input-label">NOMBRE DEL PACK</label>
+          <input type="text" class="text-input" id="pack-name" value="My Texture Pack" placeholder="Mi Pack de Texturas">
+        </div>
+        <div class="input-group">
+          <label class="input-label">DESCRIPCIÓN</label>
+          <textarea class="text-input" id="pack-desc" placeholder="Descripción del paquete...">Custom texture pack created with BlockForge</textarea>
+        </div>
+        <div class="input-group">
+          <label class="input-label">VERSIÓN</label>
+          <input type="text" class="text-input" id="pack-version" value="1.0.0" placeholder="1.0.0">
+        </div>
+      </div>
+
+      <div class="export-section">
+        <div class="section-title">UUIDs del Manifiesto</div>
+        <div class="input-group">
+          <label class="input-label">UUID HEADER</label>
+          <div class="uuid-row">
+            <div class="uuid-display" id="uuid-header"></div>
+            <button class="regen-btn" onclick="regenUUID('header')">↺</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">UUID MODULE</label>
+          <div class="uuid-row">
+            <div class="uuid-display" id="uuid-module"></div>
+            <button class="regen-btn" onclick="regenUUID('module')">↺</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-section">
+        <div class="section-title">Resumen del Pack</div>
+      </div>
+      <div class="pack-summary">
+        <div class="summary-item"><span class="summary-key">Texturas totales</span><span class="summary-val accent" id="sum-total">0</span></div>
+        <div class="summary-item"><span class="summary-key">Bloques</span><span class="summary-val" id="sum-blocks">0</span></div>
+        <div class="summary-item"><span class="summary-key">Ítems</span><span class="summary-val" id="sum-items">0</span></div>
+        <div class="summary-item"><span class="summary-key">Entidades</span><span class="summary-val" id="sum-entities">0</span></div>
+        <div class="summary-item"><span class="summary-key">Tamaño estimado</span><span class="summary-val" id="sum-size">—</span></div>
+      </div>
+
+      <div id="export-progress">
+        <div class="progress-label" id="progress-label">Empaquetando...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <div class="export-btns">
+        <button class="export-btn export-btn-primary" onclick="exportMcpack()">
+          <span class="btn-icon">📦</span> Exportar como .mcpack
+        </button>
+        <button class="export-btn export-btn-secondary" onclick="exportZip()">
+          <span class="btn-icon">🗜️</span> Exportar como .zip
+        </button>
+        <button class="export-btn export-btn-secondary" onclick="exportManifest()">
+          <span class="btn-icon">📄</span> Solo manifest.json
+        </button>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-panel="textures">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Texturas</span>
+    </button>
+    <button class="nav-btn" data-panel="editor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span>Editor</span>
+    </button>
+    <button class="nav-btn" data-panel="preview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      <span>3D</span>
+    </button>
+    <button class="nav-btn" data-panel="export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Exportar</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <h3 id="modal-title">Confirmación</h3>
+    <p id="modal-msg">¿Estás seguro?</p>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-btn modal-btn-confirm" id="modal-confirm-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSZIP CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- THREE.JS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+/* =============================================
+   BLOCKFORGE — TEXTURE PACK STUDIO
+   Main Application Script
+   ============================================= */
+
+// ===== GLOBAL STATE =====
+const App = {
+  textures: {},          // { id: { name, category, canvas, layers, history, historyIndex } }
+  activeTextureId: null,
+  activeTool: 'pencil',
+  activeColor: '#00e5ff',
+  brushSize: 1,
+  brushOpacity: 1,
+  activeLayerId: null,
+  layers: [],            // [{ id, name, canvas, ctx, visible, opacity }]
+  zoom: 1,
+  panX: 0, panY: 0,
+  isDrawing: false,
+  selection: null,       // { x1, y1, x2, y2 } or null
+  lassoPath: [],
+  selectionTool: null,   // 'rect' | 'lasso'
+  canvasW: 16, canvasH: 16,
+  previewScene: null,
+  previewShape: 'cube',
+  currentFilter: null,
+  pixelGridOn: false,
+  colorHistory: ['#00e5ff','#7c4dff','#ff6b35','#ffffff','#000000','#ff1744','#ffd740','#00e676'],
+  uuids: { header: '', module: '' },
+  adjustments: { saturation: 0, hue: 0, brightness: 0, contrast: 0 },
+  undoStack: [],
+  redoStack: [],
+  db: null,
+  currentFace: 'all',
+  moveState: null,
+  adjPreviewRaf: null,
+  adjPreviewDirty: false,
+};
+
+// ===== INDEXEDDB SETUP =====
+// ===== INSTANCE ISOLATION =====
+// Each browser session gets a unique instanceId stored in localStorage.
+// All IndexedDB keys are prefixed with it, so two users sharing the same
+// server origin never see each other's projects.
+let INSTANCE_ID = localStorage.getItem('bs_instance_id');
+if (!INSTANCE_ID) {
+  INSTANCE_ID = 'inst_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  localStorage.setItem('bs_instance_id', INSTANCE_ID);
+}
+
+function iKey(key) { return INSTANCE_ID + '::' + key; }   // prefix a key
+function iOwns(key) { return key && key.startsWith(INSTANCE_ID + '::'); } // check ownership
+function iStrip(key) { return key.replace(INSTANCE_ID + '::', ''); }      // remove prefix
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('BlockForgeDB', 2);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('textures')) db.createObjectStore('textures', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('project')) db.createObjectStore('project', { keyPath: 'key' });
+    };
+    req.onsuccess = e => { App.db = e.target.result; resolve(); };
+    req.onerror = () => reject('IndexedDB error');
+  });
+}
+
+function dbPut(store, data) {
+  if (!App.db) return;
+  const tx = App.db.transaction(store, 'readwrite');
+  tx.objectStore(store).put(data);
+}
+function dbGet(store, key) {
+  return new Promise(resolve => {
+    if (!App.db) return resolve(null);
+    const tx = App.db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+}
+function dbGetAll(store) {
+  return new Promise(resolve => {
+    if (!App.db) return resolve([]);
+    const tx = App.db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    // Filter: only return records that belong to this instance
+    req.onsuccess = () => resolve((req.result || []).filter(r => {
+      const k = r.key || r.id || '';
+      return iOwns(k);
+    }));
+    req.onerror = () => resolve([]);
+  });
+}
+function dbDelete(store, key) {
+  if (!App.db) return;
+  const tx = App.db.transaction(store, 'readwrite');
+  tx.objectStore(store).delete(key);
+}
+
+// ===== UUID =====
+function genUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+function regenUUID(type) {
+  App.uuids[type] = genUUID();
+  document.getElementById(`uuid-${type}`).textContent = App.uuids[type];
+}
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 2500);
+}
+
+// ===== MODAL =====
+let modalCallback = null;
+function showModal(title, msg, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent = msg;
+  modalCallback = onConfirm;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-confirm-btn').onclick = () => { closeModal(); if (modalCallback) modalCallback(); };
+
+// ===== NAVIGATION =====
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = btn.dataset.panel;
+    document.getElementById(panel + '-panel').classList.add('active');
+    if (panel === 'preview') initOrUpdatePreview();
+    if (panel === 'export') updateExportSummary();
+  });
+});
+
+// ===== FILE UPLOAD =====
+const fileInput = document.getElementById('file-input');
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  const arr = Array.from(files).filter(f => /\.(png|jpg|jpeg|gif)$/i.test(f.name));
+  if (!arr.length) { showToast('Solo se aceptan archivos de imagen', 'error'); return; }
+  let loaded = 0;
+  arr.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const id = iKey('tex_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+        const w = img.width, h = img.height;
+        // Base canvas
+        const bc = document.createElement('canvas'); bc.width = w; bc.height = h;
+        bc.getContext('2d').drawImage(img, 0, 0);
+        // Auto-categorize
+        const n = file.name.toLowerCase();
+        let cat = 'blocks';
+        const itemKeywords = ['item','sword','axe','pickaxe','shovel','hoe','bow','arrow','shield','helmet','chestplate','leggings','boots','armor','food','apple','bread','carrot','potato','meat','fish','bucket','bottle','potion','spawn_egg','egg','rod','book','map','compass','clock','flint','coal','diamond','emerald','gold','iron','ingot','nugget','dust','pearl','eye','feather','bone','string','leather','paper','quill','ink','dye','seed','wheat','sugar','blaze','nether_star','totem','trident','crossbow','firework','banner_pattern','music_disc','disc','shulker','elytra','saddle','lead','name_tag'];
+        const entityKeywords = ['entity','mob','creeper','zombie','skeleton','spider','enderman','witch','villager','golem','slime','ghast','blaze','wither','ender_dragon','pig','cow','sheep','chicken','horse','wolf','cat','fox','panda','dolphin','turtle','parrot','bat','bee','phantom','drowned','husk','stray','guardian','elder','vex','vindicator','evoker','ravager','pillager','hoglin','piglin','strider','zoglin','warden','allay','frog','tadpole','sniffer','camel','armadillo'];
+        const uiKeywords = ['ui','icon','button','cursor','hud','inventory','slot','bar','heart','xp','hotbar','crosshair','banner','logo','splash','menu','background','frame','border','tab','recipe','crafting_table_top'];
+
+        if (itemKeywords.some(k => n.includes(k))) cat = 'items';
+        else if (entityKeywords.some(k => n.includes(k))) cat = 'entities';
+        else if (uiKeywords.some(k => n.includes(k))) cat = 'ui';
+
+        const texData = { id, name: file.name.replace(/\.[^.]+$/, ''), category: cat, w, h, dataURL: bc.toDataURL('image/png'), layers: [createLayerData(bc, 'Base')], activeLayerId: 'l_base' };
+        App.textures[id] = texData;
+        dbPut('textures', texData);
+        loaded++;
+        if (loaded === arr.length) {
+          renderTextureGrid();
+          showToast(`${loaded} textura(s) cargada(s) ✓`, 'success');
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function createLayerData(srcCanvas, name = 'Capa') {
+  const id = 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  const c = document.createElement('canvas'); c.width = srcCanvas.width; c.height = srcCanvas.height;
+  c.getContext('2d').drawImage(srcCanvas, 0, 0);
+  return { id, name, dataURL: c.toDataURL(), visible: true, opacity: 1 };
+}
+
+// ===== TEXTURE GRID =====
+let currentCat = 'all';
+document.querySelectorAll('.cat-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentCat = tab.dataset.cat;
+    renderTextureGrid();
+  });
+});
+
+function renderTextureGrid() {
+  const grid = document.getElementById('texture-grid');
+  const ids = Object.keys(App.textures).filter(id => currentCat === 'all' || App.textures[id].category === currentCat);
+  if (!ids.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="big-icon">🧱</div><p>No hay texturas en esta categoría</p></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  ids.forEach(id => {
+    const tex = App.textures[id];
+    const item = document.createElement('div');
+    item.className = 'tex-item' + (App.activeTextureId === id ? ' selected' : '');
+    item.dataset.id = id;
+    const c = document.createElement('canvas'); c.width = tex.w; c.height = tex.h;
+    const ctx = c.getContext('2d');
+    // Draw all visible layers
+    if (tex.layers) {
+      tex.layers.forEach(l => {
+        if (!l.visible) return;
+        const img = new Image(); img.src = l.dataURL;
+        ctx.globalAlpha = l.opacity; ctx.drawImage(img, 0, 0); ctx.globalAlpha = 1;
+      });
+    }
+    const badge = document.createElement('div'); badge.className = 'tex-badge';
+    const nameEl = document.createElement('div'); nameEl.className = 'tex-name'; nameEl.textContent = tex.name;
+    const delBtn = document.createElement('button'); delBtn.className = 'del-btn'; delBtn.textContent = '×';
+    delBtn.addEventListener('click', e => { e.stopPropagation(); deleteTexture(id); });
+    item.appendChild(c); item.appendChild(badge); item.appendChild(nameEl); item.appendChild(delBtn);
+    item.addEventListener('click', () => selectTexture(id));
+    grid.appendChild(item);
+  });
+}
+
+function deleteTexture(id) {
+  showModal('Eliminar textura', `¿Eliminar "${App.textures[id]?.name}"? Esta acción no se puede deshacer.`, () => {
+    delete App.textures[id];
+    dbDelete('textures', id);
+    if (App.activeTextureId === id) { App.activeTextureId = null; clearEditor(); }
+    renderTextureGrid();
+    showToast('Textura eliminada', 'error');
+  });
+}
+
+// ===== SELECT & LOAD TEXTURE INTO EDITOR =====
+function selectTexture(id) {
+  App.activeTextureId = id;
+  document.querySelectorAll('.tex-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  loadTextureIntoEditor(id);
+  // Navigate to editor
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="editor"]').classList.add('active');
+  document.getElementById('editor-panel').classList.add('active');
+}
+
+function clearEditor() {
+  document.getElementById('no-tex-msg').style.display = 'flex';
+  document.getElementById('canvas-wrap').style.display = 'none';
+  document.getElementById('editor-title').textContent = 'Sin textura';
+}
+
+function loadTextureIntoEditor(id) {
+  const tex = App.textures[id];
+  if (!tex) return;
+  document.getElementById('no-tex-msg').style.display = 'none';
+  document.getElementById('canvas-wrap').style.display = 'block';
+  document.getElementById('editor-title').textContent = tex.name;
+  App.canvasW = tex.w; App.canvasH = tex.h;
+  App.layers = [];
+  App.undoStack = []; App.redoStack = [];
+  updateUndoRedoBtns();
+  // Invalidar snapshot al cambiar de textura
+  _adjSnapshot = null;
+  if (typeof resetAdjustmentSliders === "function") resetAdjustmentSliders();
+
+  // Setup canvases
+  const layerDisplay = document.getElementById('layer-display');
+  const drawCanvas = document.getElementById('draw-canvas');
+  const selCanvas = document.getElementById('selection-canvas');
+  [layerDisplay, drawCanvas, selCanvas].forEach(c => { c.width = tex.w; c.height = tex.h; });
+
+  // Load layers
+  let loaded = 0;
+  tex.layers.forEach(ld => {
+    const c = document.createElement('canvas'); c.width = tex.w; c.height = tex.h;
+    const ctx = c.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      App.layers.push({ id: ld.id, name: ld.name, canvas: c, ctx, visible: ld.visible, opacity: ld.opacity });
+      loaded++;
+      if (loaded === tex.layers.length) {
+        App.activeLayerId = tex.layers[0].id;
+        if (!App.activeLayerId && App.layers.length) App.activeLayerId = App.layers[0].id;
+        compositeAndDisplay();
+        fitCanvas();
+        renderLayersList();
+      }
+    };
+    img.src = ld.dataURL;
+  });
+}
+
+// ===== CANVAS COMPOSITE =====
+function compositeAndDisplay() {
+  const display = document.getElementById('layer-display');
+  const ctx = display.getContext('2d');
+  ctx.clearRect(0, 0, display.width, display.height);
+  App.layers.forEach(l => {
+    if (!l.visible) return;
+    ctx.globalAlpha = l.opacity;
+    ctx.drawImage(l.canvas, 0, 0);
+    ctx.globalAlpha = 1;
+  });
+  if (App.pixelGridOn) drawPixelGrid();
+  updatePreviewIfActive();
+}
+
+function drawPixelGrid() {
+  const display = document.getElementById('layer-display');
+  const ctx = display.getContext('2d');
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 0.5 / App.zoom;
+  for (let x = 0; x <= display.width; x++) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, display.height); ctx.stroke();
+  }
+  for (let y = 0; y <= display.height; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(display.width, y); ctx.stroke();
+  }
+}
+
+function getActiveLayerCtx() {
+  const l = App.layers.find(l => l.id === App.activeLayerId);
+  return l ? l.ctx : null;
+}
+function getActiveLayer() { return App.layers.find(l => l.id === App.activeLayerId); }
+
+// ===== FIT CANVAS =====
+function fitCanvas() {
+  const container = document.getElementById('canvas-container');
+  const w = container.clientWidth - 20, h = container.clientHeight - 20;
+  const scaleX = w / App.canvasW, scaleY = h / App.canvasH;
+  App.zoom = Math.min(scaleX, scaleY, 16);
+  App.zoom = Math.max(App.zoom, 1);
+  applyCanvasTransform();
+}
+function applyCanvasTransform() {
+  const wrap = document.getElementById('canvas-wrap');
+  const px = Math.round(App.canvasW * App.zoom), py = Math.round(App.canvasH * App.zoom);
+  wrap.style.width = px + 'px'; wrap.style.height = py + 'px';
+  document.querySelectorAll('#canvas-wrap canvas').forEach(c => { c.style.width = px + 'px'; c.style.height = py + 'px'; });
+  document.getElementById('canvas-info').textContent = `${App.canvasW}×${App.canvasH} — ${Math.round(App.zoom * 100)}%`;
+}
+function zoomCanvas(factor) { App.zoom = Math.min(Math.max(App.zoom * factor, 1), 32); applyCanvasTransform(); }
+function resetZoom() { fitCanvas(); }
+
+// ===== DRAWING =====
+const drawCanvas = document.getElementById('draw-canvas');
+let lastPt = null;
+
+function getCanvasPoint(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  const x = Math.floor((touch.clientX - rect.left) / App.zoom);
+  const y = Math.floor((touch.clientY - rect.top) / App.zoom);
+  return { x, y };
+}
+
+function hexToRgba(hex, alpha = 1) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+drawCanvas.addEventListener('touchstart', e => {
+  // Don't draw if touch started on an overlay button (zoom, undo/redo)
+  if (e.target !== drawCanvas) return;
+  onDrawStart(e);
+}, { passive: false });
+drawCanvas.addEventListener('touchmove', onDrawMove, { passive: false });
+drawCanvas.addEventListener('touchend', onDrawEnd);
+drawCanvas.addEventListener('mousedown', onDrawStart);
+drawCanvas.addEventListener('mousemove', onDrawMove);
+drawCanvas.addEventListener('mouseup', onDrawEnd);
+
+function onDrawStart(e) {
+  e.preventDefault();
+  if (!App.activeTextureId || !App.activeLayerId) return;
+  const pt = getCanvasPoint(e);
+  App.isDrawing = true;
+  lastPt = pt;
+  if (App.activeTool === 'rect-select') {
+    App.selection = { x1: pt.x, y1: pt.y, x2: pt.x, y2: pt.y };
+    App.selectionTool = 'rect';
+    return;
+  }
+  if (App.activeTool === 'lasso') {
+    App.lassoPath = [pt]; App.selectionTool = 'lasso'; return;
+  }
+  if (App.activeTool === 'eyedropper') { pickColor(pt); return; }
+  if (App.activeTool === 'fill') { floodFill(pt); return; }
+  if (App.activeTool === 'move') { App.moveState = { startX: pt.x, startY: pt.y }; return; }
+  pushUndoState();
+  drawAtPoint(pt);
+}
+
+function onDrawMove(e) {
+  e.preventDefault();
+  if (!App.isDrawing || !App.activeTextureId) return;
+  const pt = getCanvasPoint(e);
+  if (App.activeTool === 'rect-select' && App.selection) {
+    App.selection.x2 = pt.x; App.selection.y2 = pt.y;
+    drawSelectionOverlay(); return;
+  }
+  if (App.activeTool === 'lasso') { App.lassoPath.push(pt); drawLassoOverlay(); return; }
+  if (App.activeTool === 'eyedropper' || App.activeTool === 'fill') return;
+  if (lastPt) drawLine(lastPt, pt);
+  lastPt = pt;
+}
+
+function onDrawEnd(e) {
+  if (!App.isDrawing) return;
+  App.isDrawing = false;
+  lastPt = null;
+  if (App.activeTool === 'lasso') {
+    App.selection = { path: [...App.lassoPath], type: 'lasso' };
+    App.selectionTool = 'lasso';
+  }
+  compositeAndDisplay();
+  saveCurrentTexture();
+}
+
+function drawAtPoint(pt) {
+  const ctx = getActiveLayerCtx();
+  if (!ctx) return;
+  const s = App.brushSize, alpha = App.brushOpacity;
+  if (App.activeTool === 'pencil') {
+    ctx.fillStyle = hexToRgba(App.activeColor, alpha);
+    if (App.selection && isInSelection(pt.x, pt.y)) {
+      ctx.fillRect(pt.x - Math.floor(s/2), pt.y - Math.floor(s/2), s, s);
+    } else if (!App.selection) {
+      ctx.fillRect(pt.x - Math.floor(s/2), pt.y - Math.floor(s/2), s, s);
+    }
+  } else if (App.activeTool === 'eraser') {
+    ctx.clearRect(pt.x - Math.floor(s/2), pt.y - Math.floor(s/2), s, s);
+  }
+  compositeAndDisplay();
+}
+
+function drawLine(from, to) {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy), 1);
+  for (let i = 0; i <= steps; i++) {
+    drawAtPoint({ x: Math.round(from.x + dx * i / steps), y: Math.round(from.y + dy * i / steps) });
+  }
+}
+
+function isInSelection(x, y) {
+  if (!App.selection) return true;
+  if (App.selectionTool === 'rect') {
+    const { x1, y1, x2, y2 } = App.selection;
+    return x >= Math.min(x1,x2) && x <= Math.max(x1,x2) && y >= Math.min(y1,y2) && y <= Math.max(y1,y2);
+  }
+  return true;
+}
+
+function drawSelectionOverlay() {
+  const sel = document.getElementById('selection-canvas');
+  const ctx = sel.getContext('2d');
+  ctx.clearRect(0, 0, sel.width, sel.height);
+  if (!App.selection) return;
+  const { x1, y1, x2, y2 } = App.selection;
+  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 0.5;
+  ctx.setLineDash([2, 2]); ctx.lineDashOffset = Date.now() / 100;
+  ctx.strokeRect(Math.min(x1,x2), Math.min(y1,y2), Math.abs(x2-x1), Math.abs(y2-y1));
+  ctx.setLineDash([]);
+  // fill overlay
+  ctx.fillStyle = 'rgba(0,229,255,0.1)';
+  ctx.fillRect(Math.min(x1,x2), Math.min(y1,y2), Math.abs(x2-x1), Math.abs(y2-y1));
+  requestAnimationFrame(() => { if (App.activeTool === 'rect-select' && App.isDrawing) drawSelectionOverlay(); });
+}
+
+function drawLassoOverlay() {
+  const sel = document.getElementById('selection-canvas');
+  const ctx = sel.getContext('2d');
+  ctx.clearRect(0, 0, sel.width, sel.height);
+  if (!App.lassoPath.length) return;
+  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 0.5;
+  ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  ctx.moveTo(App.lassoPath[0].x, App.lassoPath[0].y);
+  App.lassoPath.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function pickColor(pt) {
+  const ctx = getActiveLayerCtx();
+  if (!ctx) return;
+  const px = ctx.getImageData(pt.x, pt.y, 1, 1).data;
+  const hex = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+  App.activeColor = hex;
+  document.getElementById('color-swatch').value = hex;
+  showToast('Color: ' + hex, '');
+}
+
+// ===== FLOOD FILL =====
+function floodFill(pt) {
+  const layer = getActiveLayer();
+  if (!layer) return;
+  pushUndoState();
+  const ctx = layer.ctx;
+  const imageData = ctx.getImageData(0, 0, App.canvasW, App.canvasH);
+  const data = imageData.data;
+  const idx = (pt.y * App.canvasW + pt.x) * 4;
+  const targetR = data[idx], targetG = data[idx+1], targetB = data[idx+2], targetA = data[idx+3];
+  const fillColor = hexToRgbaArr(App.activeColor, App.brushOpacity);
+  if (targetR === fillColor[0] && targetG === fillColor[1] && targetB === fillColor[2]) return;
+  const stack = [{ x: pt.x, y: pt.y }];
+  while (stack.length) {
+    const p = stack.pop();
+    if (p.x < 0 || p.x >= App.canvasW || p.y < 0 || p.y >= App.canvasH) continue;
+    const i = (p.y * App.canvasW + p.x) * 4;
+    if (Math.abs(data[i]-targetR)>10 || Math.abs(data[i+1]-targetG)>10 || Math.abs(data[i+2]-targetB)>10 || Math.abs(data[i+3]-targetA)>10) continue;
+    data[i]=fillColor[0]; data[i+1]=fillColor[1]; data[i+2]=fillColor[2]; data[i+3]=fillColor[3];
+    stack.push({x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1});
+  }
+  ctx.putImageData(imageData, 0, 0);
+  compositeAndDisplay();
+  saveCurrentTexture();
+}
+
+function hexToRgbaArr(hex, alpha = 1) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r, g, b, Math.round(alpha * 255)];
+}
+
+// ===== UNDO/REDO =====
+function pushUndoState() {
+  const snap = App.layers.map(l => ({ id: l.id, dataURL: l.canvas.toDataURL() }));
+  App.undoStack.push(snap);
+  if (App.undoStack.length > 30) App.undoStack.shift();
+  App.redoStack = [];
+  updateUndoRedoBtns();
+  // Persist to IndexedDB
+  if (App.activeTextureId) {
+    dbPut('history', { id: iKey(App.activeTextureId + '_undo'), stack: App.undoStack.slice(-10).map(s => JSON.stringify(s)) });
+  }
+}
+
+function undo() {
+  if (!App.undoStack.length) return;
+  const current = App.layers.map(l => ({ id: l.id, dataURL: l.canvas.toDataURL() }));
+  App.redoStack.push(current);
+  const state = App.undoStack.pop();
+  restoreState(state);
+  updateUndoRedoBtns();
+  showToast('Deshecho ↩');
+}
+
+function redo() {
+  if (!App.redoStack.length) return;
+  const current = App.layers.map(l => ({ id: l.id, dataURL: l.canvas.toDataURL() }));
+  App.undoStack.push(current);
+  const state = App.redoStack.pop();
+  restoreState(state);
+  updateUndoRedoBtns();
+  showToast('Rehecho ↪');
+}
+
+function restoreState(state) {
+  let loaded = 0;
+  state.forEach(s => {
+    const layer = App.layers.find(l => l.id === s.id);
+    if (!layer) return;
+    const img = new Image();
+    img.onload = () => {
+      layer.ctx.clearRect(0,0,layer.canvas.width,layer.canvas.height);
+      layer.ctx.drawImage(img,0,0);
+      loaded++;
+      if (loaded === state.length) { compositeAndDisplay(); saveCurrentTexture(); }
+    };
+    img.src = s.dataURL;
+  });
+}
+
+function updateUndoRedoBtns() {
+  document.getElementById('btn-undo').disabled = !App.undoStack.length;
+  document.getElementById('btn-redo').disabled = !App.redoStack.length;
+}
+
+document.getElementById('btn-undo').onclick = undo;
+document.getElementById('btn-redo').onclick = redo;
+
+// ===== TOOL SELECTION =====
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    App.activeTool = btn.dataset.tool;
+    // Clear selection visual if switching away
+    if (!['rect-select','lasso'].includes(App.activeTool)) {
+      const sel = document.getElementById('selection-canvas');
+      sel.getContext('2d').clearRect(0,0,sel.width,sel.height);
+      App.selection = null;
+    }
+  });
+});
+
+// ===== DRAWER TABS =====
+document.querySelectorAll('.drawer-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.drawer-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('drawer-' + tab.dataset.drawer).classList.add('active');
+  });
+});
+
+// ===== BRUSH SLIDERS =====
+document.getElementById('brush-size').addEventListener('input', e => {
+  App.brushSize = parseInt(e.target.value);
+  document.getElementById('brush-size-val').textContent = e.target.value;
+});
+document.getElementById('brush-opacity').addEventListener('input', e => {
+  App.brushOpacity = parseInt(e.target.value) / 100;
+  document.getElementById('brush-opacity-val').textContent = e.target.value + '%';
+});
+
+// ===== COLOR =====
+document.getElementById('color-swatch').addEventListener('input', e => { App.activeColor = e.target.value; });
+const presetContainer = document.getElementById('color-presets');
+App.colorHistory.forEach(c => addColorPreset(c));
+function addColorPreset(color) {
+  const p = document.createElement('div');
+  p.className = 'color-preset';
+  p.style.background = color;
+  p.addEventListener('click', () => { App.activeColor = color; document.getElementById('color-swatch').value = color; });
+  presetContainer.appendChild(p);
+}
+
+// ===== ADJUSTMENTS =====
+// Snapshot: copia limpia de la capa ANTES de cualquier ajuste
+let _adjSnapshot = null;
+
+function takeAdjSnapshot() {
+  const layer = getActiveLayer();
+  if (!layer) { _adjSnapshot = null; return; }
+  _adjSnapshot = layer.ctx.getImageData(0, 0, App.canvasW, App.canvasH);
+}
+
+// Toma snapshot al abrir el tab de Ajustes
+document.querySelector('[data-drawer="adjust"]').addEventListener('click', () => {
+  takeAdjSnapshot();
+  resetAdjustmentSliders();
+});
+
+['saturation','hue','brightness','contrast'].forEach(adj => {
+  document.getElementById('adj-' + adj).addEventListener('input', e => {
+    const value = Number(e.target.value);
+    App.adjustments[adj] = value;
+    document.getElementById('adj-' + adj + '-val').textContent = value;
+    schedulePreviewAdjustments();
+  });
+});
+
+function computeAdjustedPixels(srcData) {
+  const { saturation, hue, brightness, contrast } = App.adjustments;
+  if (saturation === 0 && hue === 0 && brightness === 0 && contrast === 0) return srcData;
+
+  const out = new ImageData(new Uint8ClampedArray(srcData.data), srcData.width, srcData.height);
+  const d = out.data;
+  const satFactor = 1 + (saturation / 100);
+  const hueOffset = hue / 360;
+  const brightnessDelta = brightness * 2.55;
+  const contrastFactor = contrast !== 0 ? (259 * (contrast + 255)) / (255 * (259 - contrast)) : 1;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const a = d[i + 3];
+    if (a === 0) continue;
+
+    let r = d[i], g = d[i + 1], b = d[i + 2];
+
+    if (brightness !== 0) {
+      r += brightnessDelta; g += brightnessDelta; b += brightnessDelta;
+    }
+    if (contrast !== 0) {
+      r = contrastFactor * (r - 128) + 128;
+      g = contrastFactor * (g - 128) + 128;
+      b = contrastFactor * (b - 128) + 128;
+    }
+    if (hue !== 0 || saturation !== 0) {
+      let [h, s, l] = rgbToHsl(r, g, b);
+      h = (h + hueOffset + 1) % 1;
+      s = clamp01(s * satFactor);
+      [r, g, b] = hslToRgb(h, s, l);
+    }
+
+    d[i] = clamp(r);
+    d[i + 1] = clamp(g);
+    d[i + 2] = clamp(b);
+  }
+  return out;
+}
+
+function schedulePreviewAdjustments() {
+  App.adjPreviewDirty = true;
+  if (App.adjPreviewRaf) return;
+  App.adjPreviewRaf = requestAnimationFrame(() => {
+    App.adjPreviewRaf = null;
+    if (!App.adjPreviewDirty) return;
+    App.adjPreviewDirty = false;
+    previewAdjustments();
+  });
+}
+
+function previewAdjustments() {
+  if (!_adjSnapshot) { takeAdjSnapshot(); return; }
+  const layer = getActiveLayer();
+  if (!layer) return;
+  const result = computeAdjustedPixels(_adjSnapshot);
+  layer.ctx.putImageData(result, 0, 0);
+  compositeAndDisplay();
+}
+
+function applyAdjustments() {
+  if (!App.activeLayerId) { showToast('Selecciona una textura primero', 'error'); return; }
+  const layer = getActiveLayer();
+  if (!layer) return;
+  if (!_adjSnapshot) takeAdjSnapshot();
+  pushUndoState();
+  const result = computeAdjustedPixels(_adjSnapshot);
+  layer.ctx.putImageData(result, 0, 0);
+  compositeAndDisplay(); saveCurrentTexture();
+  _adjSnapshot = layer.ctx.getImageData(0, 0, App.canvasW, App.canvasH);
+  resetAdjustmentSliders();
+  showToast('Ajustes aplicados ✓', 'success');
+}
+
+function resetAdjustments() {
+  if (_adjSnapshot) {
+    const layer = getActiveLayer();
+    if (layer) { layer.ctx.putImageData(_adjSnapshot, 0, 0); compositeAndDisplay(); }
+  }
+  resetAdjustmentSliders();
+}
+
+function resetAdjustmentSliders() {
+  App.adjPreviewDirty = false;
+  ['saturation','hue','brightness','contrast'].forEach(adj => {
+    App.adjustments[adj] = 0;
+    document.getElementById('adj-' + adj).value = 0;
+    document.getElementById('adj-' + adj + '-val').textContent = 0;
+  });
+}
+
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function rgbToHsl(r,g,b) {
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2;
+  if(max===min) return [0,0,l];
+  const d=max-min,s=l>0.5?d/(2-max-min):d/(max+min);
+  let h;
+  if(max===r) h=(g-b)/d+(g<b?6:0);
+  else if(max===g) h=(b-r)/d+2;
+  else h=(r-g)/d+4;
+  return [h/6,s,l];
+}
+function hslToRgb(h,s,l) {
+  if(s===0) { const v=Math.round(l*255); return [v,v,v]; }
+  const q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;
+  const hue2rgb=(p,q,t)=>{if(t<0)t++;if(t>1)t--;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+  return [Math.round(hue2rgb(p,q,h+1/3)*255),Math.round(hue2rgb(p,q,h)*255),Math.round(hue2rgb(p,q,h-1/3)*255)];
+}
+
+// ===== FILTERS =====
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyFilter(btn.dataset.filter);
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('applied'));
+    btn.classList.add('applied');
+    setTimeout(() => btn.classList.remove('applied'), 1000);
+  });
+});
+
+function applyFilter(filter) {
+  const layer = getActiveLayer();
+  if (!layer) { showToast('Selecciona una textura primero', 'error'); return; }
+  pushUndoState();
+
+  // Use Web Worker pattern for heavy filters (simulated here inline for single-file compatibility)
+  const imageData = layer.ctx.getImageData(0, 0, App.canvasW, App.canvasH);
+  const d = imageData.data;
+
+  switch(filter) {
+    case 'vintage': applyVintage(d); break;
+    case 'neon': applyNeon(d); break;
+    case 'pixelate': applyPixelate(layer.ctx); return;
+    case 'sharpen': applySharpen(layer.ctx); return;
+    case 'blur': applyBlur(layer.ctx); return;
+    case 'invert':
+      for (let i=0;i<d.length;i+=4) { d[i]=255-d[i];d[i+1]=255-d[i+1];d[i+2]=255-d[i+2]; }
+      break;
+  }
+  layer.ctx.putImageData(imageData, 0, 0);
+  compositeAndDisplay(); saveCurrentTexture();
+  showToast(`Filtro ${filter} aplicado ✓`, 'success');
+}
+
+function applyVintage(d) {
+  for (let i=0;i<d.length;i+=4) {
+    const r=d[i],g=d[i+1],b=d[i+2];
+    d[i]=clamp(r*0.9+g*0.05+b*0.05+30);
+    d[i+1]=clamp(r*0.05+g*0.85+b*0.05+15);
+    d[i+2]=clamp(r*0.05+g*0.05+b*0.6);
+  }
+}
+function applyNeon(d) {
+  for (let i=0;i<d.length;i+=4) {
+    const r=d[i],g=d[i+1],b=d[i+2];
+    const lum=(r+g+b)/3;
+    d[i]=clamp(r>128?Math.min(255,r+80):r*0.3);
+    d[i+1]=clamp(g>128?Math.min(255,g+40):g*0.3);
+    d[i+2]=clamp(b>128?Math.min(255,b+120):b*0.5+30);
+    if(lum>200){d[i]=255;d[i+1]=clamp(d[i+1]+100);d[i+2]=255;}
+  }
+}
+function applyPixelate(ctx) {
+  const size = Math.max(2, Math.floor(Math.min(App.canvasW, App.canvasH) / 8));
+  const temp = document.createElement('canvas'); temp.width=App.canvasW; temp.height=App.canvasH;
+  const tctx = temp.getContext('2d');
+  tctx.drawImage(ctx.canvas, 0,0, Math.ceil(App.canvasW/size), Math.ceil(App.canvasH/size));
+  ctx.clearRect(0,0,App.canvasW,App.canvasH);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(temp, 0,0, Math.ceil(App.canvasW/size), Math.ceil(App.canvasH/size), 0,0, App.canvasW, App.canvasH);
+  compositeAndDisplay(); saveCurrentTexture();
+  showToast('Filtro pixelado aplicado ✓', 'success');
+}
+function applySharpen(ctx) {
+  const imgData = ctx.getImageData(0,0,App.canvasW,App.canvasH);
+  const d = imgData.data;
+  const kernel = [0,-1,0,-1,5,-1,0,-1,0];
+  const tmp = new Uint8ClampedArray(d);
+  const w = App.canvasW, h = App.canvasH;
+  for(let y=1;y<h-1;y++){for(let x=1;x<w-1;x++){
+    for(let c=0;c<3;c++){
+      let sum=0;
+      for(let ky=-1;ky<=1;ky++){for(let kx=-1;kx<=1;kx++){
+        const ki=(ky+1)*3+(kx+1); const pi=((y+ky)*w+(x+kx))*4+c;
+        sum+=tmp[pi]*kernel[ki];
+      }}
+      d[(y*w+x)*4+c]=clamp(sum);
+    }
+  }}
+  ctx.putImageData(imgData,0,0);
+  compositeAndDisplay(); saveCurrentTexture();
+  showToast('Filtro enfoque aplicado ✓', 'success');
+}
+function applyBlur(ctx) {
+  const imgData = ctx.getImageData(0,0,App.canvasW,App.canvasH);
+  const d = imgData.data;
+  const kernel=[1,2,1,2,4,2,1,2,1]; const ksum=16;
+  const tmp=new Uint8ClampedArray(d); const w=App.canvasW,h=App.canvasH;
+  for(let y=1;y<h-1;y++){for(let x=1;x<w-1;x++){
+    for(let c=0;c<3;c++){
+      let sum=0;
+      for(let ky=-1;ky<=1;ky++){for(let kx=-1;kx<=1;kx++){
+        sum+=tmp[((y+ky)*w+(x+kx))*4+c]*kernel[(ky+1)*3+(kx+1)];
+      }}
+      d[(y*w+x)*4+c]=clamp(sum/ksum);
+    }
+  }}
+  ctx.putImageData(imgData,0,0);
+  compositeAndDisplay(); saveCurrentTexture();
+  showToast('Desenfoque aplicado ✓', 'success');
+}
+
+// ===== LAYERS =====
+function addLayer() {
+  const id = 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  const c = document.createElement('canvas'); c.width=App.canvasW; c.height=App.canvasH;
+  const layer = { id, name: 'Capa ' + (App.layers.length + 1), canvas: c, ctx: c.getContext('2d'), visible: true, opacity: 1 };
+  App.layers.push(layer);
+  App.activeLayerId = id;
+  renderLayersList();
+  compositeAndDisplay();
+  saveCurrentTexture();
+  showToast('Nueva capa creada', 'success');
+}
+
+function renderLayersList() {
+  const list = document.getElementById('layers-list');
+  list.innerHTML = '';
+  [...App.layers].reverse().forEach(layer => {
+    const item = document.createElement('div');
+    item.className = 'layer-item' + (layer.id === App.activeLayerId ? ' active' : '');
+    const thumb = document.createElement('div'); thumb.className = 'layer-thumb';
+    const tc = document.createElement('canvas'); tc.width=App.canvasW; tc.height=App.canvasH;
+    tc.getContext('2d').drawImage(layer.canvas,0,0); thumb.appendChild(tc);
+    const info = document.createElement('div'); info.className = 'layer-info';
+    info.innerHTML = `<div class="layer-name">${layer.name}</div><div class="layer-meta">${layer.visible?'●':'○'} Opacidad ${Math.round(layer.opacity*100)}%</div>`;
+    const actions = document.createElement('div'); actions.className = 'layer-actions';
+    // Visibility
+    const visBtn = document.createElement('button'); visBtn.className = 'layer-act-btn'; visBtn.textContent = layer.visible ? '👁️' : '🙈';
+    visBtn.onclick = e => { e.stopPropagation(); layer.visible = !layer.visible; renderLayersList(); compositeAndDisplay(); saveCurrentTexture(); };
+    // Delete
+    const delBtn = document.createElement('button'); delBtn.className = 'layer-act-btn'; delBtn.textContent = '🗑️';
+    delBtn.onclick = e => { e.stopPropagation(); if(App.layers.length<=1){showToast('No puedes eliminar la única capa','error');return;} App.layers=App.layers.filter(l=>l.id!==layer.id); if(App.activeLayerId===layer.id)App.activeLayerId=App.layers[0].id; renderLayersList(); compositeAndDisplay(); saveCurrentTexture(); };
+    // Merge down
+    const mergeBtn = document.createElement('button'); mergeBtn.className = 'layer-act-btn'; mergeBtn.textContent = '⬇️';
+    mergeBtn.title = 'Fusionar hacia abajo';
+    mergeBtn.onclick = e => { e.stopPropagation(); mergeLayerDown(layer.id); };
+    actions.appendChild(visBtn); actions.appendChild(mergeBtn); actions.appendChild(delBtn);
+    item.appendChild(thumb); item.appendChild(info); item.appendChild(actions);
+    item.onclick = () => { App.activeLayerId = layer.id; renderLayersList(); };
+    list.appendChild(item);
+  });
+}
+
+function mergeLayerDown(id) {
+  const idx = App.layers.findIndex(l => l.id === id);
+  if (idx <= 0) { showToast('No hay capa debajo', 'error'); return; }
+  pushUndoState();
+  const above = App.layers[idx], below = App.layers[idx-1];
+  below.ctx.globalAlpha = above.opacity;
+  below.ctx.drawImage(above.canvas, 0, 0);
+  below.ctx.globalAlpha = 1;
+  App.layers.splice(idx, 1);
+  if (App.activeLayerId === id) App.activeLayerId = below.id;
+  renderLayersList(); compositeAndDisplay(); saveCurrentTexture();
+  showToast('Capas fusionadas ✓', 'success');
+}
+
+// ===== SAVE TO IDB =====
+function saveCurrentTexture() {
+  if (!App.activeTextureId) return;
+  const tex = App.textures[App.activeTextureId];
+  if (!tex) return;
+  tex.layers = App.layers.map(l => ({ id: l.id, name: l.name, dataURL: l.canvas.toDataURL(), visible: l.visible, opacity: l.opacity }));
+  // Composite preview
+  const c = document.createElement('canvas'); c.width=tex.w; c.height=tex.h;
+  const ctx = c.getContext('2d');
+  App.layers.forEach(l => { if(!l.visible)return; ctx.globalAlpha=l.opacity; ctx.drawImage(l.canvas,0,0); ctx.globalAlpha=1; });
+  tex.dataURL = c.toDataURL('image/png');
+  dbPut('textures', tex);
+  renderTextureGrid();
+  // Also persist to current project
+  if (typeof currentProjectId !== 'undefined' && currentProjectId) saveCurrentProject();
+}
+
+document.getElementById('btn-save-idb').onclick = () => { saveCurrentTexture(); showToast('Proyecto guardado en IndexedDB 💾', 'success'); };
+
+// ===== PIXEL GRID =====
+document.getElementById('btn-pixel-grid').onclick = () => {
+  App.pixelGridOn = !App.pixelGridOn;
+  document.getElementById('btn-pixel-grid').classList.toggle('active', App.pixelGridOn);
+  compositeAndDisplay();
+};
+
+// ===== 3D PREVIEW =====
+let renderer3d, scene3d, camera3d, cube3d, animFrameId;
+let isDragging3d = false, lastTouchX = 0, lastTouchY = 0;
+
+function initOrUpdatePreview() {
+  const wrap = document.getElementById('preview-3d-wrap');
+  const canvas = document.getElementById('three-canvas');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+
+  if (!renderer3d) {
+    renderer3d = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer3d.setPixelRatio(window.devicePixelRatio);
+    renderer3d.setClearColor(0x000000, 0);
+    scene3d = new THREE.Scene();
+    camera3d = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+    camera3d.position.set(2, 1.5, 2.5);
+    camera3d.lookAt(0,0,0);
+    // Lights
+    const amb = new THREE.AmbientLight(0xffffff, 0.4); scene3d.add(amb);
+    const dir = new THREE.DirectionalLight(0x00e5ff, 1.2); dir.position.set(2,3,2); scene3d.add(dir);
+    const dir2 = new THREE.DirectionalLight(0x7c4dff, 0.6); dir2.position.set(-2,1,-2); scene3d.add(dir2);
+    // Grid
+    const grid = new THREE.GridHelper(6, 6, 0x2a3545, 0x2a3545); grid.position.y=-0.5; scene3d.add(grid);
+
+    // Touch/mouse controls
+    let lastX=0,lastY=0,rotX=0.3,rotY=0.5;
+    const onDown = e => { isDragging3d=true; const t=e.touches?e.touches[0]:e; lastX=t.clientX; lastY=t.clientY; };
+    const onMove = e => {
+      if(!isDragging3d)return; e.preventDefault();
+      const t=e.touches?e.touches[0]:e;
+      const dx=(t.clientX-lastX)*0.01, dy=(t.clientY-lastY)*0.01;
+      rotY+=dx; rotX+=dy;
+      if(cube3d){cube3d.rotation.y=rotY;cube3d.rotation.x=rotX;}
+      lastX=t.clientX; lastY=t.clientY;
+    };
+    const onUp = () => { isDragging3d=false; };
+    canvas.addEventListener('touchstart', onDown, {passive:true});
+    canvas.addEventListener('touchmove', onMove, {passive:false});
+    canvas.addEventListener('touchend', onUp);
+    canvas.addEventListener('mousedown', onDown);
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseup', onUp);
+    // Pinch zoom
+    let lastPinch=0;
+    canvas.addEventListener('touchstart', e=>{if(e.touches.length===2){lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}});
+    canvas.addEventListener('touchmove', e=>{if(e.touches.length===2){const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const delta=dist-lastPinch;camera3d.position.multiplyScalar(1-delta*0.005);lastPinch=dist;}});
+  }
+
+  renderer3d.setSize(W, H);
+  camera3d.aspect = W / H;
+  camera3d.updateProjectionMatrix();
+
+  buildCube3d();
+  animate3d();
+}
+
+function buildCube3d() {
+  if (cube3d) { scene3d.remove(cube3d); cube3d.geometry.dispose(); }
+  let geo;
+  switch(App.previewShape) {
+    case 'flat': geo = new THREE.PlaneGeometry(1, 1); break;
+    case 'slab': geo = new THREE.BoxGeometry(1, 0.5, 1); break;
+    default: geo = new THREE.BoxGeometry(1, 1, 1);
+  }
+  // Get texture from active texture or placeholder
+  let texCanvas;
+  if (App.activeTextureId && App.textures[App.activeTextureId]) {
+    texCanvas = document.getElementById('layer-display');
+    if (!texCanvas || !texCanvas.width) {
+      texCanvas = document.createElement('canvas'); texCanvas.width=16; texCanvas.height=16;
+      texCanvas.getContext('2d').fillStyle='#555'; texCanvas.getContext('2d').fillRect(0,0,16,16);
+    }
+  } else {
+    texCanvas = createPlaceholderCanvas();
+  }
+  const threeTexture = new THREE.CanvasTexture(texCanvas);
+  threeTexture.magFilter = THREE.NearestFilter;
+  threeTexture.minFilter = THREE.NearestFilter;
+  const mats = Array(6).fill(null).map(() => new THREE.MeshStandardMaterial({ map: threeTexture, transparent: true }));
+  cube3d = new THREE.Mesh(geo, mats);
+  cube3d.rotation.y = 0.5; cube3d.rotation.x = 0.3;
+  scene3d.add(cube3d);
+}
+
+function createPlaceholderCanvas() {
+  const c = document.createElement('canvas'); c.width=16; c.height=16;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#2a3545'; ctx.fillRect(0,0,16,16);
+  ctx.fillStyle='#3d4f63';
+  for(let y=0;y<16;y+=4)for(let x=0;x<16;x+=4)if((x+y)%8===0)ctx.fillRect(x,y,4,4);
+  return c;
+}
+
+function animate3d() {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  function loop() {
+    if (!renderer3d) return;
+    if (cube3d && !isDragging3d) cube3d.rotation.y += 0.005;
+    // Update texture from canvas
+    if (cube3d && App.activeTextureId) {
+      const display = document.getElementById('layer-display');
+      if (display && display.width) {
+        cube3d.material.forEach(m => { if(m.map){m.map.needsUpdate=true;} });
+      }
+    }
+    renderer3d.render(scene3d, camera3d);
+    animFrameId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function updatePreviewIfActive() {
+  if (document.getElementById('preview-panel').classList.contains('active') && cube3d) {
+    cube3d.material.forEach(m => { if(m.map) m.map.needsUpdate=true; });
+  }
+}
+
+document.getElementById('btn-refresh-3d').onclick = () => { buildCube3d(); showToast('Vista 3D actualizada', 'success'); };
+
+function setPreviewShape(shape) {
+  App.previewShape = shape;
+  document.querySelectorAll('.prev-ctrl-btn').forEach(b => b.classList.toggle('active', b.dataset.shape === shape));
+  buildCube3d();
+}
+
+document.querySelectorAll('.face-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.face-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    App.currentFace = btn.dataset.face;
+    // Apply to specific faces
+    if (cube3d && App.activeTextureId) {
+      const display = document.getElementById('layer-display');
+      if (!display || !display.width) return;
+      const threeTexture = new THREE.CanvasTexture(display);
+      threeTexture.magFilter = THREE.NearestFilter;
+      threeTexture.minFilter = THREE.NearestFilter;
+      const blank = new THREE.MeshStandardMaterial({ color: 0x1c2530 });
+      const faceMap = { top:2, bottom:3, front:4, back:5, right:0, left:1 };
+      if (App.currentFace === 'all') {
+        cube3d.material.forEach(m => { m.map = threeTexture; m.color.set(0xffffff); m.needsUpdate=true; });
+      } else {
+        cube3d.material.forEach((m,i) => { m.map = null; m.color.set(0x1c2530); m.needsUpdate=true; });
+        const fi = faceMap[App.currentFace];
+        if (fi !== undefined) { cube3d.material[fi].map=threeTexture; cube3d.material[fi].color.set(0xffffff); cube3d.material[fi].needsUpdate=true; }
+      }
+    }
+  });
+});
+
+// ===== EXPORT =====
+function generateUUIDs() {
+  if (!App.uuids.header) { App.uuids.header = genUUID(); document.getElementById('uuid-header').textContent = App.uuids.header; }
+  if (!App.uuids.module) { App.uuids.module = genUUID(); document.getElementById('uuid-module').textContent = App.uuids.module; }
+}
+
+function updateExportSummary() {
+  generateUUIDs();
+  const all = Object.values(App.textures);
+  document.getElementById('sum-total').textContent = all.length;
+  document.getElementById('sum-blocks').textContent = all.filter(t=>t.category==='blocks').length;
+  document.getElementById('sum-items').textContent = all.filter(t=>t.category==='items').length;
+  document.getElementById('sum-entities').textContent = all.filter(t=>t.category==='entities').length;
+  // Estimate size
+  let bytes = 0;
+  all.forEach(t => { if(t.dataURL) bytes += Math.round(t.dataURL.length * 0.75); });
+  document.getElementById('sum-size').textContent = bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? Math.round(bytes/1024) + ' KB' : (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function buildManifest() {
+  const name = document.getElementById('pack-name').value || 'My Texture Pack';
+  const desc = document.getElementById('pack-desc').value || 'Custom texture pack';
+  const ver = document.getElementById('pack-version').value || '1.0.0';
+  const vArr = ver.split('.').map(Number);
+  return JSON.stringify({
+    format_version: 2,
+    header: { name, description: desc, uuid: App.uuids.header, version: vArr, min_engine_version: [1,16,0] },
+    modules: [{ type: 'resources', uuid: App.uuids.module, version: vArr }]
+  }, null, 2);
+}
+
+function setProgress(pct, label) {
+  const prog = document.getElementById('export-progress');
+  prog.classList.add('visible');
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+  if (pct >= 100) setTimeout(() => { prog.classList.remove('visible'); }, 1500);
+}
+
+async function buildZip(ext = '.mcpack') {
+  generateUUIDs();
+  const packName = document.getElementById('pack-name').value || 'MyTexturePack';
+  const zip = new JSZip();
+  const packFolder = zip;
+
+  setProgress(10, 'Generando manifest.json...');
+  packFolder.file('manifest.json', buildManifest());
+
+  // pack_icon (placeholder)
+  const iconCanvas = document.createElement('canvas'); iconCanvas.width=64; iconCanvas.height=64;
+  const ictx = iconCanvas.getContext('2d');
+  ictx.fillStyle='#0d1117'; ictx.fillRect(0,0,64,64);
+  ictx.fillStyle='#00e5ff'; ictx.font='bold 36px sans-serif'; ictx.textAlign='center'; ictx.textBaseline='middle';
+  ictx.fillText('🧱', 32, 32);
+  const iconData = iconCanvas.toDataURL('image/png').split(',')[1];
+  packFolder.file('pack_icon.png', iconData, {base64:true});
+
+  const texList = Object.values(App.textures);
+  let idx = 0;
+  for (const tex of texList) {
+    setProgress(10 + (idx / texList.length) * 80, `Añadiendo ${tex.name}...`);
+    const pathMap = { blocks: 'textures/blocks/', items: 'textures/items/', entities: 'textures/entity/', ui: 'textures/ui/' };
+    const path = (pathMap[tex.category] || 'textures/blocks/') + tex.name + '.png';
+    // Composite all layers
+    const fc = document.createElement('canvas'); fc.width=tex.w; fc.height=tex.h;
+    const fctx = fc.getContext('2d');
+    if (tex.layers) {
+      for (const ld of tex.layers) {
+        if (!ld.visible) continue;
+        await new Promise(resolve => {
+          const img = new Image(); img.onload=()=>{fctx.globalAlpha=ld.opacity;fctx.drawImage(img,0,0);fctx.globalAlpha=1;resolve();};
+          img.src=ld.dataURL;
+        });
+      }
+    } else {
+      const img = new Image(); await new Promise(r=>{img.onload=r;img.src=tex.dataURL;});
+      fctx.drawImage(img,0,0);
+    }
+    const pngData = fc.toDataURL('image/png').split(',')[1];
+    packFolder.file(path, pngData, {base64:true});
+    idx++;
+  }
+
+  setProgress(95, 'Comprimiendo...');
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  setProgress(100, '¡Listo!');
+  return { blob, name: packName + ext };
+}
+
+async function exportMcpack() {
+  if (!Object.keys(App.textures).length) { showToast('No hay texturas para exportar', 'error'); return; }
+  try {
+    const { blob, name } = await buildZip('.mcpack');
+    downloadBlob(blob, name);
+    showToast(`${name} descargado ✓`, 'success');
+  } catch(e) { showToast('Error al exportar: ' + e.message, 'error'); console.error(e); }
+}
+
+async function exportZip() {
+  if (!Object.keys(App.textures).length) { showToast('No hay texturas para exportar', 'error'); return; }
+  try {
+    const { blob, name } = await buildZip('.zip');
+    downloadBlob(blob, name);
+    showToast(`${name} descargado ✓`, 'success');
+  } catch(e) { showToast('Error al exportar: ' + e.message, 'error'); }
+}
+
+function exportManifest() {
+  generateUUIDs();
+  const blob = new Blob([buildManifest()], { type: 'application/json' });
+  downloadBlob(blob, 'manifest.json');
+  showToast('manifest.json descargado ✓', 'success');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ===== LOAD SAVED DATA FROM IDB =====
+async function loadSavedData() {
+  try {
+    await initDB();
+    const saved = await dbGetAll('textures');
+    if (saved && saved.length) {
+      saved.forEach(tex => { App.textures[tex.id] = tex; });
+      renderTextureGrid();
+      showToast(`${saved.length} textura(s) restauradas 💾`, 'success');
+    }
+  } catch(e) { console.warn('Could not load from IDB:', e); }
+}
+
+// ===== EDITOR OPEN BUTTON =====
+document.getElementById('btn-edit-open').onclick = () => {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="textures"]').classList.add('active');
+  document.getElementById('textures-panel').classList.add('active');
+};
+
+// ===== PINCH ZOOM ON CANVAS =====
+let pinchStartDist = 0, pinchStartZoom = 1;
+drawCanvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    pinchStartDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchStartZoom = App.zoom;
+  }
+}, {passive:true});
+drawCanvas.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    App.zoom = Math.min(Math.max(pinchStartZoom * (dist/pinchStartDist), 1), 32);
+    applyCanvasTransform();
+  }
+}, {passive:true});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') { e.preventDefault(); if(e.shiftKey) redo(); else undo(); }
+    if (e.key === 's') { e.preventDefault(); saveCurrentTexture(); showToast('Guardado ✓', 'success'); }
+  }
+  if (e.key === 'e') { document.querySelector('[data-tool="eraser"]').click(); }
+  if (e.key === 'p') { document.querySelector('[data-tool="pencil"]').click(); }
+  if (e.key === 'i') { document.querySelector('[data-tool="eyedropper"]').click(); }
+  if (e.key === 'f') { document.querySelector('[data-tool="fill"]').click(); }
+  if (e.key === 'g') { document.querySelector('[data-tool="rect-select"]').click(); }
+});
+
+// ===== SESSIONS SYSTEM =====
+let currentProjectId = null;
+
+function renderSessionsGrid() {
+  const grid = document.getElementById('ss-grid');
+  grid.innerHTML = '';
+
+  // CREATE card (always first)
+  const createCard = document.createElement('div');
+  createCard.className = 'ss-card-create';
+  createCard.innerHTML = '<div class="cc-icon"></div><span>Crear</span>';
+  createCard.addEventListener('click', openNewProjectModal);
+  grid.appendChild(createCard);
+
+  // Project cards from IndexedDB projects store
+  dbGetAll('project').then(projects => {
+    // Sort by lastModified desc
+    projects.sort((a,b) => (b.lastModified||0) - (a.lastModified||0));
+    projects.forEach(proj => {
+      if (proj.key === '_settings') return; // skip meta keys
+      const card = document.createElement('div');
+      card.className = 'ss-card';
+      card.dataset.id = proj.key;
+
+      // Preview grid (up to 9 textures)
+      const texList = Object.values(proj.textures || {}).slice(0, 9);
+      let previewEl;
+      if (texList.length === 0) {
+        previewEl = document.createElement('div');
+        previewEl.className = 'ss-card-preview-empty';
+        previewEl.textContent = '🧱';
+      } else {
+        previewEl = document.createElement('div');
+        previewEl.className = 'ss-card-preview';
+        texList.forEach(tex => {
+          const thumb = document.createElement('div');
+          thumb.className = 'ss-thumb';
+          const tc = document.createElement('canvas');
+          tc.width = tex.w || 16; tc.height = tex.h || 16;
+          const tctx = tc.getContext('2d');
+          // Draw composite
+          const drawLayers = (layers, i) => {
+            if (!layers || i >= layers.length) return;
+            const ld = layers[i];
+            if (!ld.visible) { drawLayers(layers, i+1); return; }
+            const img = new Image();
+            img.onload = () => {
+              tctx.globalAlpha = ld.opacity || 1;
+              tctx.drawImage(img, 0, 0, tc.width, tc.height);
+              tctx.globalAlpha = 1;
+              drawLayers(layers, i+1);
+            };
+            img.src = ld.dataURL;
+          };
+          if (tex.layers && tex.layers.length) drawLayers(tex.layers, 0);
+          else if (tex.dataURL) {
+            const img = new Image(); img.onload=()=>tctx.drawImage(img,0,0,tc.width,tc.height); img.src=tex.dataURL;
+          }
+          thumb.appendChild(tc);
+          previewEl.appendChild(thumb);
+        });
+      }
+
+      const footer = document.createElement('div');
+      footer.className = 'ss-card-footer';
+      const count = Object.keys(proj.textures || {}).length;
+      const date = proj.lastModified ? new Date(proj.lastModified).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+      footer.innerHTML = '<div class="ss-card-name">' + (proj.name||'Sin nombre') + '</div><div class="ss-card-meta">' + count + ' tex · ' + date + '</div>';
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'ss-card-del';
+      delBtn.textContent = '×';
+      delBtn.style.display = 'none';
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm('¿Eliminar "' + (proj.name||'proyecto') + '"?\nEsta acción no se puede deshacer.')) {
+          dbDelete('project', proj.key);
+          card.style.transition = 'opacity 0.2s, transform 0.2s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.9)';
+          setTimeout(() => renderSessionsGrid(), 220);
+          showToast('Proyecto eliminado', 'error');
+        }
+      });
+
+      // Long press to reveal delete button
+      let lpTimer, lpActive = false;
+      card.addEventListener('touchstart', () => {
+        lpActive = false;
+        lpTimer = setTimeout(() => {
+          lpActive = true;
+          delBtn.style.display = 'flex';
+          card.classList.add('long-press');
+        }, 500);
+      });
+      card.addEventListener('touchend', () => {
+        clearTimeout(lpTimer);
+      });
+      card.addEventListener('touchmove', () => clearTimeout(lpTimer));
+      // Desktop hover
+      card.addEventListener('mouseenter', () => { delBtn.style.display = 'flex'; });
+      card.addEventListener('mouseleave', () => { delBtn.style.display = 'none'; card.classList.remove('long-press'); });
+
+      card.addEventListener('click', () => { if (!lpActive) openProject(proj.key); lpActive = false; });
+      card.appendChild(previewEl);
+      card.appendChild(footer);
+      card.appendChild(delBtn);
+      grid.appendChild(card);
+    });
+  });
+}
+
+function openNewProjectModal() {
+  document.getElementById('new-project-name').value = '';
+  document.getElementById('new-project-modal').classList.add('open');
+  setTimeout(() => document.getElementById('new-project-name').focus(), 350);
+}
+function closeNewProjectModal() {
+  document.getElementById('new-project-modal').classList.remove('open');
+}
+document.getElementById('new-project-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmNewProject();
+  if (e.key === 'Escape') closeNewProjectModal();
+});
+document.getElementById('new-project-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('new-project-modal')) closeNewProjectModal();
+});
+
+function confirmNewProject() {
+  const name = document.getElementById('new-project-name').value.trim() || 'Mi Texture Pack';
+  closeNewProjectModal();
+  const projId = iKey('proj_' + Date.now());
+  const proj = { key: projId, name, textures: {}, uuids: { header: genUUID(), module: genUUID() }, lastModified: Date.now() };
+  dbPut('project', proj);
+  openProject(projId);
+}
+
+function openProject(projId) {
+  dbGet('project', projId).then(proj => {
+    if (!proj) { showToast('Proyecto no encontrado', 'error'); return; }
+    currentProjectId = projId;
+    // Load project textures into App.textures
+    App.textures = proj.textures || {};
+    // Load project uuids
+    App.uuids = proj.uuids || { header: genUUID(), module: genUUID() };
+    document.getElementById('uuid-header').textContent = App.uuids.header;
+    document.getElementById('uuid-module').textContent = App.uuids.module;
+    document.getElementById('pack-name').value = proj.name || 'My Texture Pack';
+    // Enter the app
+    document.getElementById('sessions-screen').classList.add('hidden');
+    renderTextureGrid();
+    clearEditor();
+    renderLayersList();
+    showToast('Proyecto "' + proj.name + '" abierto', 'success');
+  });
+}
+
+function saveCurrentProject() {
+  if (!currentProjectId) return;
+  dbGet('project', currentProjectId).then(proj => {
+    if (!proj) return;
+    proj.textures = App.textures;
+    proj.uuids = App.uuids;
+    proj.name = document.getElementById('pack-name').value || proj.name;
+    proj.lastModified = Date.now();
+    dbPut('project', proj);
+  });
+}
+
+// Back to sessions button (header save btn repurposed as home when in project)
+document.getElementById('btn-save-idb').onclick = () => {
+  if (currentProjectId) {
+    saveCurrentProject();
+    showToast('Proyecto guardado 💾', 'success');
+  }
+};
+
+// Add a HOME button logic — tap logo area goes back
+document.querySelector('#header .logo').style.cursor = 'pointer';
+function goBackToProjects() {
+  if (!currentProjectId) return;
+  saveCurrentProject();
+  currentProjectId = null;
+  App.textures = {};
+  App.layers = [];
+  App.activeTextureId = null;
+  App.undoStack = []; App.redoStack = [];
+  _adjSnapshot = null;
+  clearEditor();
+  // Reset to textures tab
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="textures"]').classList.add('active');
+  document.getElementById('textures-panel').classList.add('active');
+  // Show sessions screen
+  document.getElementById('sessions-screen').classList.remove('hidden');
+  renderSessionsGrid();
+}
+
+document.querySelector('#header .logo').addEventListener('click', goBackToProjects);
+
+// ===== INIT =====
+generateUUIDs();
+initDB().then(() => {
+  renderSessionsGrid();
+});
+console.log('🧱 Bedrock Studio v1.4 — Ready');
+</script>
+</body>
+</html>
